@@ -1,4 +1,45 @@
 # 一：Java基础 #
+##线程池
+[https://www.jianshu.com/p/7726c70cdc40](https://www.jianshu.com/p/7726c70cdc40 "线程池详解")
+###什么是线程池
+线程池就是创建若干个可执行的线程放入一个池（容器）中，有任务需要处理时，会提交到线程池中的任务队列，处理完之后线程并不会被销毁，而是仍然在线程池中等待下一个任务。
+
+**一个线程池包括以下四个基本组成部分：**
+
+- 线程池管理器（ThreadPool）：用于创建并管理线程池，包括 创建线程池，销毁线程池，添加新任务；
+- 工作线程（PoolWorker）：线程池中线程，在没有任务时处于等待状态，可以循环的执行任务；
+-  任务接口（Task）：每个任务必须实现的接口，以供工作线程调度任务的执行，它主要规定了任务的入口，任务执行完后的收尾工作，任务的执行状态等；
+-  任务队列（taskQueue）：用于存放没有处理的任务。提供一种缓冲机制。                                                            
+###线程池的优势
+
+- 降低系统资源消耗，通过重用已存在的线程，降低线程创建和销毁造成的消耗；
+- 提高系统响应速度，当有任务到达时，通过复用已存在的线程，无需等待新线程的创建便能立即执行；
+- 方便线程并发数的管控。因为线程若是无限制的创建，可能会导致内存占用过多而产生OOM，并且会造成cpu过度切换（cpu切换线程是有时间成本的（需要保持当前执行线程的现场，并恢复要执行线程的现场））。
+- 提供更强大的功能，延时定时线程池
+###线程池的主要参数
+    public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+    this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
+         Executors.defaultThreadFactory(), defaultHandler);
+    }
+1、corePoolSize（线程池基本大小）：当向线程池提交一个任务时，若线程池已创建的线程数小于corePoolSize，即便此时存在空闲线程，也会通过创建一个新线程来执行该任务，直到已创建的线程数大于或等于corePoolSize时，（除了利用提交新任务来创建和启动线程（按需构造），也可以通过 prestartCoreThread() 或 prestartAllCoreThreads() 方法来提前启动线程池中的基本线程。）
+
+2、maximumPoolSize（线程池最大大小）：线程池所允许的最大线程个数。当队列满了，且已创建的线程数小于maximumPoolSize，则线程池会创建新的线程来执行任务。另外，对于无界队列，可忽略该参数。
+
+3、keepAliveTime（线程存活保持时间）当线程池中线程数大于核心线程数时，线程的空闲时间如果超过线程存活时间，那么这个线程就会被销毁，直到线程池中的线程数小于等于核心线程数。
+
+4、workQueue（任务队列）：用于传输和保存等待执行任务的阻塞队列。
+
+5、threadFactory（线程工厂）：用于创建新线程。threadFactory创建的线程也是采用new Thread()方式，threadFactory创建的线程名都具有统一的风格：pool-m-thread-n（m为线程池的编号，n为线程池内的线程编号）。
+
+###常见线程池
+- newSingleThreadExecutor
+单个线程的线程池，即线程池中每次只有一个线程工作，单线程串行执行任务
+- newFixedThreadExecutor(n)
+ 固定数量的线程池，没提交一个任务就是一个线程，直到达到线程池的最大数量，然后后面进入等待队列直到前面的任务完成才继续执行
+- newCacheThreadExecutor（推荐使用）
+可缓存线程池， 当线程池大小超过了处理任务所需的线程，那么就会回收部分空闲（一般是60秒无执行）的线程，当有任务来时，又智能的添加新线程来执行。
+- newScheduleThreadExecutor
+大小无限制的线程池，支持定时和周期性的执行线程
 
 ## 装箱拆箱
 装箱就是  自动将基本数据类型转换为包装器类型；拆箱就是  自动将包装器类型转换为基本数据类型
@@ -340,6 +381,74 @@ return value ：return 特定值，用于有返回值的方法
 
 ## 面向对象，关键字 abstract static interface
 
+[https://blog.csdn.net/qq_37766026/article/details/90702387?utm_medium=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-1.control&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-1.control](https://blog.csdn.net/qq_37766026/article/details/90702387?utm_medium=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-1.control&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-1.control "抽象类和接口")
+
+###抽象类
+在面向对象的概念中，所有的对象都是通过类来描绘的，但是反过来，并不是所有的类都是用来描绘对象的，如果一个类中没有包含足够的信息来描绘一个具体的对象，这样的类就可以称之为抽象类。
+####抽象方法：使用abstract修饰且没有方法体的方法。
+特点：
+
+① 抽象方法没有方法体，交给子类实现
+
+② 抽象方法修饰符不能是private final static
+
+③ 抽象方法必须定义在抽象类或者接口中
+
+####抽象类：包含抽象方法的类，即使用abstract修饰的类。
+
+特点：
+
+① 抽象类不能被实例化，只能被继承
+
+② 抽象类中可以不包含抽象方法（不包含抽象方法就没有太大意义，可以作为工具类防止被实例化）
+
+③ 抽象类的子类可以不实现该类所有的抽象方法，但也必须作为抽象类（抽象派生类）
+
+④ 抽象类的构造方法不能定义成私有（子类构造方法会调用父类构造方法）
+
+⑤ 抽象类不能使用final修饰，final修饰的类不能被继承
+————————————————
+版权声明：本文为CSDN博主「男神不神经」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_37766026/article/details/90702387
+相同点：
+
+① 抽象类和接口都不能被实例化
+
+② 抽象类和接口都可以定义抽象方法，子类/实现类必须覆写这些抽象方法
+
+不同点：
+
+① 抽象类有构造方法，接口没有构造方法
+
+② 抽象类可以包含普通方法，接口中只能是public abstract修饰抽象方法（Java8之后可以）
+
+③ 抽象类只能单继承，接口可以多继承
+
+④ 抽象类可以定义各种类型的成员变量，接口中只能是public static final修饰的静态常量
+
+###设计层面：
+
+- 抽象类是对一种事物的抽象，即对类抽象，而接口是对行为的抽象。抽象类是对整个类整体进行抽象，包括属性、行为，但是接口却是对类局部（行为）进行抽象。
+ 
+- 设计层面不同，抽象类作为很多子类的父类，它是一种模板式设计。而接口是一种行为规范，它是一种辐射式设计。
+
+###抽象类和接口的使用场景
+
+####抽象类的使用场景
+
+- 既想约束子类具有共同的行为（但不再乎其如何实现），又想拥有缺省的方法，又能拥有实例变量
+ 
+- 如：模板方法设计模式，模板方法使得子类可以在不改变算法结构的情况下，重新定义算法中某些步骤的具体实现。
+
+####接口的应用场景
+① 约束多个实现类具有统一的行为，但是不在乎每个实现类如何具体实现
+
+② 作为能够实现特定功能的标识存在，也可以是什么接口方法都没有的纯粹标识。
+
+③ 实现类需要具备很多不同的功能，但各个功能之间可能没有任何联系。
+
+④ 使用接口的引用调用具体实现类中实现的方法（多态）
+
 ## throdlocal
 
 ## socked
@@ -396,6 +505,216 @@ public protect default private 四个要懂，基础知识了。特别注意prot
 1. 内存分布。JMM、运行时数据区、native内存分布。很看对JVM的理解程度。
 
 # Android #
+**1.android不依赖具体activity弹出Dialog对话框，即全局性对话框.**
+
+在创建Dialog时添加:
+
+ `dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);`
+
+并在AndroidManifest.xml中添加:
+
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+## 附加： ##
+
+**1.SDK环境配置（adb install apk环境配置）**
+
+环境变量添加：
+
+变量名：`ADB_HOME `
+
+变量值：`D:\androidstudio\Android\Sdk\platform-tools`
+
+变量名：`ANDROID_HOME `
+
+变量值：`D:\androidstudio\Android\Sdk`
+
+然后在变量名：`Path `下添加`;%ANDROID_HOME%;%ADB_HOME%;`
+
+最后验证一下：打开cmd命令行窗口：分别输入 **adb  android **  两个命令进行验证，都没有出错，则配置成功。
+
+**2.JDK 环境配置**
+
+- 系统变量→新建 JAVA_HOME 变量 。变量值填写jdk的安装目录（例如 E:\Java\jdk1.7.0)。
+- 系统变量→寻找 Path 变量→编辑在变量值最后输入 `%JAVA_HOME%\bin;`%JAVA_HOME%\jre\bin;（注意原来Path的变量值末尾有没有;号，如果没有，先输入；号再输入上面的代码）。
+- 系统变量→新建 CLASSPATH 变量变量值填写   `.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar`（注意最前面有一点）。
+- 检验是否配置成功 运行cmd 输入 java -version （java 和 -version 之间有空格）若如图所示 显示版本信息 则说明安装和配置成功。
+**3.开发环境测试**
+
+1.要把手机网络代理修改为发布系统的电脑IP
+2.模拟器。电脑要添加对应电脑的Ip,`C:\Windows\System32\drivers\etc`添加对应Ip
+例：
+    
+    ‘# Copyright (c) 1993-2009 Microsoft Corp.
+     0.0.0.0 account.jetbrains.com
+     10.3.0.200  m-dev.rongrun.com’
+##【Android】四大组件归纳总结 
+[https://www.cnblogs.com/y4ngyy/p/12496745.html](https://www.cnblogs.com/y4ngyy/p/12496745.html "四大组件")
+四大组件均可使用android:process="name"在Manifest中声明成独立进程
+Activity
+生命周期
+ ![](https://developer.android.google.cn/guide/components/images/activity_lifecycle.png?hl=zh-cn)
+
+**4种启动模式**
+
+Android使用回退栈来管理Activity实例。当前显示的Activity在栈顶，当点击后退或返回时，栈顶的Activity出栈。
+
+可以指定Activity的启动模式来避免重复创建同一Activity
+
+在AndroidManifest.xml中声明Activity的启动模式
+
+    <activity android:name=".MyActivity"
+          android:lauchMode="singleTask"></activity>
+
+- standard
+默认的启动模式，允许Activity被多次实例化，一个任务栈中会有多个Activity实例
+- singleTop
+处于栈顶的Activity会被重用，若不在栈顶则会被重新创建。重用时会调用原来实例的onNewIntent()函数
+- singleTask(常用)
+一个任务栈只允许存在一个Activity实例，当startActivity()时，若该Activity在栈内，则会将该Activity上的所有Activity销毁，使该Activity处于栈顶，并调用onNewIntent()方法
+- singleInstance
+一个Activity在独立的任务中开启，保证在系统中只有一个实例，所有的startActivity()都会重用该实例，并回调onNewIntent()方法
+
+两个Activity互相切换时的生命周期
+
+A：onCreate->onStart->onResume
+
+这是在A中启动B活动，生命周期如下：
+
+A: onPause
+
+B: onCreate->onStart->onResume
+
+A: onStop
+
+从B中返回A活动时
+
+B: onPause
+
+A: onRestart->onStart->onResume
+
+B: onStop->onDestroy
+
+**Service**
+
+https://blog.csdn.net/javazejian/article/details/52709857
+
+当程序进入后台运行时，所需要做的操作可以通过Service实现。
+
+在任何位置调用startService()启动服务。
+
+每个服务只存在一个实例，每次调用startService()时会回调onStartCommand()；只需要调用一次stopService()或stopSelf()函数，服务会被停止。
+
+普通Service运行在UI线程，若需要执行耗时操作需要新开线程。
+
+生命周期#
+onCreate()
+
+onStartCommand(intent, flags, startId)
+
+有三种返回值
+
+- START_STICKY：当服务因内存不足被kill掉后，内存空闲时会尝试重建服务，重建成功则回调onStartCommand()，这是传入的intent为null.
+- START_NOT_STICKY：当Service因内存不足而被系统kill后，即使系统内存再次空闲时，系统也不会尝试重新创建此Service.
+- START_REDELIVER_INTENT：当Service因内存不足而被系统kill后，则会重建服务，并通过传递给服务的最后一个 Intent 调用 onStartCommand()，这个值适用于主动执行应该立即恢复的作业（例如下载文件）的服务.
+- onDestroy()
+
+调用stopService()或stopSelf()
+IntentService
+重写onHandleIntent()函数，在函数中完成耗时操作。IntentService会自动将操作执行在子线程中，并在完成时调用stopSelf()自我销毁
+public class MyIntentService extends IntentService {
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        ...
+    }
+}
+Binder(与服务连接)
+当服务仅限本地应用使用，不需要跨进程工作，则可以实现自有的Binder类，让客户端通过该类直接访问服务中的公共方法。
+首先需要创建ServiceConnection对象，代表与服务的连接，有两个方法
+•	onServiceConnected(name, serivce)
+系统会调用该方法传递服务的onBind()方法返回的IBinder, 通过该对象可以调用获取到Service的实例对象，进而调用服务端的公共方法。
+•	onServiceDisconnected(name)
+系统与服务意外中断时调用，unBind不会调用该方法
+调用bindService(intent, ServiceConnection, flag)绑定相关服务，flag指绑定时是否自动创建Service，0表示不创建；BIND_AUTO_CREATE表示自动创建。
+调用unbindService(ServiceConnection)
+当最后一个客户端与服务取消绑定时，系统会将服务销毁
+前台服务
+•	startForeground(int id, Notification notification)
+将当前服务设成前台服务，id参数为唯一标识通知的整型数，不得为0
+•	stopForeground(boolean removeNotification)
+Android8.0后需要开启前台服务要在Activity中startForegroundService(i)，且之后Service要在5s内调用startForeground()才能成功创建前台服务
+如何保证Service不被杀死
+•	内存资源不足
+o	将onStartCommand()返回值设成START_STICKY或START_REDELIVER_INTENT，这样内存组后也会恢复服务
+o	将服务设成前台服务，具备较高优先级
+•	用户手动干预
+如果不是force stop则会调用生命周期中的onDestroy()方法，可以在方法中发送广播重启服务。完备一些的话就启动两个服务，相互监听，相互重启。
+Broadcast
+https://www.jianshu.com/p/ca3d87a4cdf3
+组成：发送广播的Broadcast，接受广播的BroadcastReceiver和传递消息的Intent。
+类型：普通广播、有序广播、本地广播(LocalBroadcast)、Sticky广播
+静态广播与动态广播
+广播可分为静态注册和动态注册两种形式
+•	静态注册
+在Manifest.xml中声明静态广播
+<receiver android:name=".MyReceiver">
+    <intent-filter android:priority=1000>
+        <action android:name="com.broadcast"
+    </intent-filter>
+</receiver>
+•	动态注册
+可以在onCreate的时候注册
+MyBroadcastReceiver receiver = new MyBroadcastReceiver();
+IntentFilter filter = new IntentFilter("my.action");
+context.registerReceiver(receiver, filter);
+在onDestroy的时候注销
+unregisterReceiver(receiver);
+•	静态广播与动态广播的区别
+1.	静态广播在activity注销的时候也能够继续接收；动态广播在APP退出后就无法接收了
+2.	动态广播在相同Priority下优先级比静态广播高
+普通广播
+异步广播，调用sendBroadcast(new Intent(ACTION))来发出广播
+定义广播接收器
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        ...
+    }
+}
+在AndroidManifest.xml中注册:
+<receiver android:name=".broadcast.MyBroadcastReceiver">
+    <intent-filter>
+        <action android:name=".."/>
+    </intent-filter>
+</receiver>
+动态注册接收器:
+registerReceiver(new MyBroadcastReceiver(), new IntentFilter(MY_ACTION));
+有序广播
+发送出去的广播被广播的接收者按照先后顺序接收
+接收的顺序排序
+•	按照Priority属性值从大到小
+•	Priority相同则动态注册广播优先
+本地广播
+只限于应用的广播
+使用LocalBroadcastManager.getInstance(context)来使用关于广播的操作函数:
+•	registerReceiver(receiver, intentFilter)
+•	unregisterReceiver(receiver)
+•	sendBroadcast(new Intent(INTENT_NAME))
+•	sendBroadcastSync(new Intent())
+注册本地广播
+mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
+mReceiver = new MyBroadcastReceiver();
+IntentFilter filter = new IntentFilter();
+filter.addAction(ACTION_MY_TYPE);
+mLocalBroadcastManager.registerReceiver(mReceiver,filter);
+需要在onDestory()的中进行注销：
+mLocalBroadcastManager.unregisterReceiver(mReceiver)
+ContentProvider
+ContentProvider可以将应用中的数据共享给其他应用访问，其他应用可以通过ContentProvider对应用中的数据进行增删改查。
+也可以进行进程间数据的交互和共享，跨进程通信。
+
+
+
 
 ## 横竖屏切换时候 Activity 的生命周期
 - 不设置 android:configChanges ，切屏会销毁当前 Activity，重新加载各个生命周期，切横屏时会执行一次，切竖屏时会执行两次。
@@ -467,9 +786,9 @@ public protect default private 四个要懂，基础知识了。特别注意prot
 
 ##onSaveInstanceState()方法的作用 ? 何时会被调用？
 - 系统配置发生改变时导致 Activity 被杀死并重新创建、资源内存不足导致优先级低的 Activity 被杀死。
-- 
+ 
 - 系统会调用 onSaveInstanceState 来保存当前 Activity 的状态，此方法调用在onStop之前，与onPause 没有既定的时序关系；
-- 
+ 
 - 当Activity被重建后，系统会调用 onRestoreInstanceState，并且把 onSaveInstanceState 方法所保存的 Bundle 对象同时传参给 onRestoreInstanceState 和 onCreate()，因此可以通过这两个方法判断Activity 是否被重建 ，调用在 onStart 之后；
 **简单来说，当页面未经你同意意外杀死的时候回调用！**
 
@@ -543,7 +862,9 @@ AsyncTask 是一个抽象的泛型类，提供了 Params（参数类型）、Pro
 	}
     }
 #### 线程池
-
+线程池主要是用在并发操作中，在并发操作中线程比较多，如果每一个线程执行结束了就销毁，接下来如果新任务来都是时候就需要新建线程，这样频繁创建和销毁线程，会大大降低系统效率。
+- 并发：同一个处理器在同一时间段处理多个任务，交替执行。
+- 并行：不同处理器在同一时刻同时处理不同的任务。
 AsyncTask 里面线程池是一个核心线程数为 CPU + 1，最大线程数为 CPU * 2 + 1，工作队列长度为128 的线程池，线程等待队列的最大等待数为 28，但是可以自定义线程池。线程池是由 AsyncTask 来处理的，线程池允许tasks并行运行，需要注意的是并发情况下数据的一致性问题，新数据可能会被老数据覆盖掉。所以希望tasks能够串行运行的话，使用SERIAL_EXECUTOR。
 
 #### 原理（两个线程池 + Handler）
@@ -803,8 +1124,8 @@ assets：不会在 R 文件中生成相应标记，存放到这里的资源在�
 
 res：会在 R 文件中生成 id 标记，资源在打包时如果使用到则打包到安装包中，未用到不会打入安装包中。
 
-### 32 Handler
-
+##32 Handler
+[https://www.jianshu.com/p/b5b7d61c84ac](https://www.jianshu.com/p/b5b7d61c84ac "Handler常问问题")
 ![](../asset/handler.png)
 
 #### 角色
@@ -976,7 +1297,32 @@ ActivityThread.main() 方法中调用了 Looper.prepareMainLooper() 方法创建
 Handler 允许我们发送延时消息，如果在延时期间用户关闭了 Activity，那么该 Activity 会泄露。 这个泄露是因为 Message 会持有 Handler，而又因为 Java 的特性，内部类会持有外部类，使得 Activity 会被 Handler 持有，这样最终就导致 Activity 泄露。
 
 解决：将 Handler 定义成静态的内部类，在内部持有 Activity 的弱引用，并在Acitivity的onDestroy()中调用handler.removeCallbacksAndMessages(null) 及时移除所有消息。
+    private static class SafeHandler extends Handler {
 
+    private WeakReference<HandlerActivity> ref;
+
+    public SafeHandler(HandlerActivity activity) {
+        this.ref = new WeakReference(activity);
+    }
+
+    @Override
+    public void handleMessage(final Message msg) {
+        HandlerActivity activity = ref.get();
+        if (activity != null) {
+            activity.handleMessage(msg);
+        }
+    }
+    }
+并且再在 Activity.onDestroy() 前移除消息，加一层保障：
+
+    @Override
+    protected void onDestroy() {
+    safeHandler.removeCallbacksAndMessages(null);
+    super.onDestroy();
+    }
+这样双重保障，就能完全避免内存泄露了。
+
+注意：单纯的在 onDestroy 移除消息并不保险，因为 onDestroy 并不一定执行
 ##### Handler 里藏着的 Callback 能干什么？
 
 优先处理消息的权利。
@@ -1021,6 +1367,7 @@ new Thread(new Runnable() {
   }
 }).start();
 ```
+##pipe/epoll机制
 
 [Handler 都没搞懂，拿什么去跳槽啊？](https://juejin.im/post/5c74b64a6fb9a049be5e22fc#heading-7)
 
@@ -1145,14 +1492,12 @@ public static void cancelAdaptScreen(final Activity activity) {
 
 * 数据(Data )
 
-```java
-<activity android:name=".secondActivity">
+     <activity android:name=".secondActivity">
             <intent-filter>
                 <action android:name="com.example.aries.androidtest.ACTION_START"></action>
                 <category android:name="android.intent.category.DEFAULT"></category>
             </intent-filter>
-</activity>
-```
+     </activity>
 
 ### 37 广播传输的数据是否有限制，是多少，为什么要限制？
 
@@ -2311,7 +2656,193 @@ RecyclerViewPool底层是使用了SparseArray来分开存储不同ViewType的Vie
 1. 启动模式。也就是常见的四种启动模式，但面试官更喜欢问何时使用他们，也就是使用场景。
 1. 生命周期。这个很少单独问，一般和启动流程或者具体的业务场景结合考问。
 1. context。主要是内存泄露的考察以及application和activity两种context如何选择。
+## 事件分发
+[https://blog.csdn.net/guolin_blog/article/details/9097463](https://blog.csdn.net/guolin_blog/article/details/9097463 "事件分发")
 
+当我们点击屏幕的时候，就会产生Event事件，此时会首先调用Activity的dispatchTouchEvent方法，源码如下：
+
+        public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            onUserInteraction();
+        }
+        if (getWindow().superDispatchTouchEvent(ev)) {
+            return true;
+        }
+        return onTouchEvent(ev);
+    }
+
+从上面的代码我们可以看出，如果是ACTION_DOWN事件，会调用onUserInteraction()方法，onUserInteraction方法的作用是当触屏点击按home，back，menu键等都会触发此方法。下拉statubar、旋转屏幕、锁屏不会触发此方法，所以可以用在屏保应用上。
+
+
+Activty事件分发很简单，如果重写了dispatchTouchEvent方法，无论是返回值是false还是true，此时事件分发结束，即不再向下传递，只有返回super.dispatchTouchEvent()时，才会正常往下传递；
+
+     /**
+     * Pass the touch screen motion event down to the target view, or this
+     * view if it is the target.
+     *
+     * 将屏幕的按压事件传递给目标view，或者当前view即目标view
+     * @param event The motion event to be dispatched.
+     * @return True if the event was handled by the view, false otherwise.
+     */
+
+    public boolean dispatchTouchEvent(MotionEvent event) {
+    //最前面这一段就是判断当前事件是否能获得焦点，如果不能获得焦点或者不存在一个View，那我们就直接返回False跳出循环
+        // If the event should be handled by accessibility focus first.
+        if (event.isTargetAccessibilityFocus()) {
+            // We don't have focus or no virtual descendant has it, do not handle the event.
+            if (!isAccessibilityFocusedViewOrHost()) {
+                return false;
+            }
+            // We have focus and got the event, then use normal event dispatch.
+            event.setTargetAccessibilityFocus(false);
+        }
+
+    //设置返回的默认值
+        boolean result = false;
+
+    //这段是系统调试方面，可以直接忽略
+        if (mInputEventConsistencyVerifier != null) {
+            mInputEventConsistencyVerifier.onTouchEvent(event, 0);
+        }
+
+    //Android用一个32位的整型值表示一次TouchEvent事件,低8位表示touch事件的具体动作，比如按下，抬起，滑动，还有多点触控时的按下，抬起，这个和单点是区分开的，下面看具体的方法: 
+    //1 getAction:触摸动作的原始32位信息，包括事件的动作，触控点信息 
+    //2 getActionMasked:触摸的动作,按下，抬起，滑动，多点按下，多点抬起 
+    //3 getActionIndex:触控点信息
+        final int actionMasked = event.getActionMasked();
+        if (actionMasked == MotionEvent.ACTION_DOWN) {
+            // Defensive cleanup for new gesture
+     // 当我们手指按到View上时,其他的依赖滑动都要先停下
+            stopNestedScroll();
+        }
+
+    //过滤掉一些不合法的事件,比如当前的View的窗口被遮挡了。  
+        if (onFilterTouchEventForSecurity(event)) {
+            if ((mViewFlags & ENABLED_MASK) == ENABLED && handleScrollBarDragging(event)) {
+                result = true;
+            }
+
+    //ListenerInfo 是view的一个内部类 里面有各种各样的listener,例如OnClickListener，OnLongClickListener，OnTouchListener等等
+
+            //noinspection SimplifiableIfStatement
+            ListenerInfo li = mListenerInfo;
+    //首先判断如果监听li对象!=null 且我们通过setOnTouchListener设置了监听，即是否有实现OnTouchListener，如果有实现就判断当前的view状态是不是ENABLED,如果实现的OnTouchListener的onTouch中返回true，并处理事件，则
+
+            if (li != null && li.mOnTouchListener != null
+                    && (mViewFlags & ENABLED_MASK) == ENABLED
+                    && li.mOnTouchListener.onTouch(this, event)) {
+    //如果满足这些条件那么返回true，这个事件就在此处理
+    // 意味着这个View需要事件分发 
+                result = true; 
+            }
+
+    //如果上一段判断的条件没有满足（没有在代码里面setOnTouchListener的话），就判断View自身的onTouchEvent方法有没有处理，没有处理最后返回false，处理了返回true；
+            if (!result && onTouchEvent(event)) {
+                result = true;
+            }
+        }
+
+    //系统调试分析相关，没有影响
+        if (!result && mInputEventConsistencyVerifier != null) {
+            mInputEventConsistencyVerifier.onUnhandledEvent(event, 0);
+        }
+
+        // Clean up after nested scrolls if this is the end of a gesture;
+        // also cancel it if we tried an ACTION_DOWN but we didn't want the rest
+        // of the gesture.
+    ////如果这是手势的结尾，则在嵌套滚动后清理
+        if (actionMasked == MotionEvent.ACTION_UP ||
+                actionMasked == MotionEvent.ACTION_CANCEL ||
+                (actionMasked == MotionEvent.ACTION_DOWN && !result)) {
+            stopNestedScroll();
+        }
+
+        return result;
+    }
+
+当触摸事件发生时，首先 Activity 将 TouchEvent 传递给最顶层的 View，TouchEvent最先到达最顶层 view 的 dispatchTouchEvent ，然后由 dispatchTouchEvent 方法进行分发，
+
+如果dispatchTouchEvent返回true 消费事件，事件终结。
+
+如果dispatchTouchEvent返回 false ，则回传给父View的onTouchEvent事件处理；
+
+如果dispatchTouchEvent返回super的话，默认会调用自己的onInterceptTouchEvent方法。
+
+- 默认的情况下onInterceptTouchEvent回调用super方法，super方法默认返回false，所以会交给子View的onDispatchTouchEvent方法处理
+
+- 如果 interceptTouchEvent 返回 true ，也就是拦截掉了，则交给它的 onTouchEvent 来处理，
+- 如果 interceptTouchEvent 返回 false ，那么就传递给子 view ，由子 view 的 dispatchTouchEvent 再来开始这个事件的分发。
+
+###滑动冲突
+####外部解决法
+从父View着手，重写onInterceptTouchEvent方法，在父View需要拦截的时候拦截，不要的时候返回false，为代码大概 如下
+
+     @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+    final float x = ev.getX();
+    final float y = ev.getY();
+
+    final int action = ev.getAction();
+    switch (action) {
+        case MotionEvent.ACTION_DOWN:
+            mDownPosX = x;
+            mDownPosY = y;
+
+            break;
+        case MotionEvent.ACTION_MOVE:
+            final float deltaX = Math.abs(x - mDownPosX);
+            final float deltaY = Math.abs(y - mDownPosY);
+            // 这里是够拦截的判断依据是左右滑动，读者可根据自己的逻辑进行是否拦截
+            if (deltaX > deltaY) {
+                return false;
+            }
+    }
+
+    return super.onInterceptTouchEvent(ev);
+    }
+
+
+
+
+####内部解决法
+从子View着手，父View先不要拦截任何事件，所有的事件传递给 子View，如果子View需要此事件就消费掉，不需要此事件的话就交给 父View处理。
+实现思路 如下，重写子 View的dispatchTouchEvent方法，在Action_down 动作中通过方法 requestDisallowInterceptTouchEvent（true） 先请求 父 View不要拦截事件，这样保证子 View 能够接受到 Action_move 事件，再在 Action_move 动作中根据自己的逻辑是否要拦截事件，不需要拦截事件的话再交给 父 View 处理。
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+    int x = (int) ev.getRawX();
+    int y = (int) ev.getRawY();
+    int dealtX = 0;
+    int dealtY = 0;
+
+    switch (ev.getAction()) {
+        case MotionEvent.ACTION_DOWN:
+            dealtX = 0;
+            dealtY = 0;
+            // 保证子View能够接收到Action_move事件
+            getParent().requestDisallowInterceptTouchEvent(true);
+            break;
+        case MotionEvent.ACTION_MOVE:
+            dealtX += Math.abs(x - lastX);
+            dealtY += Math.abs(y - lastY);
+            Log.i(TAG, "dealtX:=" + dealtX);
+            Log.i(TAG, "dealtY:=" + dealtY);
+            // 这里是够拦截的判断依据是左右滑动，读者可根据自己的逻辑进行是否拦截
+            if (dealtX >= dealtY) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+            } else {
+                getParent().requestDisallowInterceptTouchEvent(false);
+            }
+            lastX = x;
+            lastY = y;
+            break;
+        case MotionEvent.ACTION_CANCEL:
+            break;
+        case MotionEvent.ACTION_UP:
+            break;
+
+    }
+    return super.dispatchTouchEvent(ev);
+}
 
 ##Handler
 1. 内部原理。Handler必会的啊，android的消息机制，可以称为android程序的引擎来的。
