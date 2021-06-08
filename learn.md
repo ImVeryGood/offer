@@ -263,7 +263,51 @@ String针对的是少量的字符串操作
 
 **Lock锁的用法**
 
-1、使用ReentrantLock实现同步
+    public interface Lock {
+    void lock();
+    void lockInterruptibly() throws InterruptedException;
+    boolean tryLock();
+    boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+    void unlock();
+    Condition newCondition();
+    }
+
+####tryLock()
+方法是有返回值的，它表示用来尝试获取锁，如果获取成功，则返回true，如果获取失败（即锁已被其他线程获取），则返回false，也就说这个方法无论如何都会立即返回。在拿不到锁时不会一直在那等待。
+
+####lockInterruptibly()
+方法比较特殊，当通过这个方法去获取锁时，如果线程正在等待获取锁，则这个线程能够响应中断，即中断线程的等待状态。也就使说，当两个线程同时通过lock.lockInterruptibly()想获取某个锁时，假若此时线程A获取到了锁，而线程B只有在等待，那么对线程B调用threadB.interrupt()方法能够中断线程B的等待过程。
+
+    public void method() throws InterruptedException {
+    lock.lockInterruptibly();
+    try {  
+     //.....
+    }
+    finally {
+        lock.unlock();
+    }  
+    }
+
+注意，当一个线程获取了锁之后，是不会被interrupt()方法中断的。因为本身在前面的文章中讲过单独调用interrupt()方法不能中断正在运行过程中的线程，只能中断阻塞过程中的线程。
+
+因此当通过lockInterruptibly()方法获取某个锁时，如果不能获取到，只有进行等待的情况下，是可以响应中断的。
+
+而用synchronized修饰的话，当一个线程处于等待某个锁的状态，是无法被中断的，只有一直等待下去。
+
+####使用ReentrantLock实现同步
+ReentrantLock，意思是“可重入锁”
+
+另外在ReentrantLock类中定义了很多方法，比如：
+
+　　isFair()        //判断锁是否是公平锁
+
+　　isLocked()    //判断锁是否被任何线程获取了
+
+　　isHeldByCurrentThread()   //判断锁是否被当前线程获取了
+
+　　hasQueuedThreads()   //判断是否有线程在等待该锁
+
+　　在ReentrantReadWriteLock中也有类似的方法，同样也可以设置为公平锁和非公平锁。不过要记住，ReentrantReadWriteLock并未实现Lock接口，它实现的是ReadWriteLock接口。
 
 lock()方法:上锁
 
@@ -284,7 +328,73 @@ unlock()方法：释放锁
  
         }
 
+####ReadWriteLock
+ReadWriteLock也是一个接口，在它里面只定义了两个方法：
+    public interface ReadWriteLock {
+    /**
+     * Returns the lock used for reading.
+     *
+     * @return the lock used for reading.
+     */
+    Lock readLock();
+ 
+    /**
+     * Returns the lock used for writing.
+     *
+     * @return the lock used for writing.
+     */
+    Lock writeLock();
+    }
 
+一个用来获取读锁，一个用来获取写锁。也就是说将文件的读写操作分开，分成2个锁来分配给线程，从而使得多个线程可以同时进行读操作。下面的ReentrantReadWriteLock实现了ReadWriteLock接口。
+
+
+
+
+####.ReentrantReadWriteLock
+如果有一个线程已经占用了读锁，则此时其他线程如果要申请写锁，则申请写锁的线程会一直等待释放读锁。
+
+如果有一个线程已经占用了写锁，则此时其他线程如果申请写锁或者读锁，则申请的线程会一直等待释放写锁。
+####可重入锁
+如果锁具备可重入性，则称作为可重入锁。像synchronized和ReentrantLock都是可重入锁，可重入性在我看来实际上表明了锁的分配机制：基于线程的分配，而不是基于方法调用的分配。举个简单的例子，当一个线程执行到某个synchronized方法时，比如说method1，而在method1中会调用另外一个synchronized方法method2，此时线程不必重新去申请锁，而是可以直接执行方法method2。
+    class MyClass {
+    public synchronized void method1() {
+        method2();
+    }
+     
+    public synchronized void method2() {
+         
+    }
+    }
+上述代码中的两个方法method1和method2都用synchronized修饰了，假如某一时刻，线程A执行到了method1，此时线程A获取了这个对象的锁，而由于method2也是synchronized方法，假如synchronized不具备可重入性，此时线程A需要重新申请锁。但是这就会造成一个问题，因为线程A已经持有了该对象的锁，而又在申请获取该对象的锁，这样就会线程A一直等待永远不会获取到的锁。
+
+而由于synchronized和Lock都具备可重入性，所以不会发生上述现象。
+####可中断锁
+可中断锁：顾名思义，就是可以相应中断的锁。
+
+在Java中，synchronized就不是可中断锁，而Lock是可中断锁。
+
+如果某一线程A正在执行锁中的代码，另一线程B正在等待获取该锁，可能由于等待时间过长，线程B不想等待了，想先处理其他事情，我们可以让它中断自己或者在别的线程中中断它，这种就是可中断锁。
+
+在前面演示lockInterruptibly()的用法时已经体现了Lock的可中断性。
+####公平锁
+公平锁即尽量以请求锁的顺序来获取锁。比如同是有多个线程在等待一个锁，当这个锁被释放时，等待时间最久的线程（最先请求的线程）会获得该所，这种就是公平锁。
+
+非公平锁即无法保证锁的获取是按照请求锁的顺序进行的。这样就可能导致某个或者一些线程永远获取不到锁。
+
+在Java中，synchronized就是非公平锁，它无法保证等待的线程获取锁的顺序。
+
+而对于ReentrantLock和ReentrantReadWriteLock，它默认情况下是非公平锁，但是可以设置为公平锁。
+####读写锁
+读写锁将对一个资源（比如文件）的访问分成了2个锁，一个读锁和一个写锁。
+
+正因为有了读写锁，才使得多个线程之间的读操作不会发生冲突。
+
+ReadWriteLock就是读写锁，它是一个接口，ReentrantReadWriteLock实现了这个接口。
+
+可以通过readLock()获取读锁，通过writeLock()获取写锁。
+
+上面已经演示过了读写锁的使用方法，在此不再赘述。
 ### Synchronized
 
 Synchronized是Java的关键字，也是Java的内置特性，在JVM层面实现了对临界资源的同步互斥访问，通过对对象的头文件来操作，从而达到加锁和释放锁的目的。使用Synchronized修饰的代码或方法，通常有如下特性：
@@ -407,9 +517,7 @@ return value ：return 特定值，用于有返回值的方法
 ④ 抽象类的构造方法不能定义成私有（子类构造方法会调用父类构造方法）
 
 ⑤ 抽象类不能使用final修饰，final修饰的类不能被继承
-————————————————
-版权声明：本文为CSDN博主「男神不神经」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-原文链接：https://blog.csdn.net/qq_37766026/article/details/90702387
+
 相同点：
 
 ① 抽象类和接口都不能被实例化
@@ -1124,7 +1232,8 @@ assets：不会在 R 文件中生成相应标记，存放到这里的资源在�
 
 res：会在 R 文件中生成 id 标记，资源在打包时如果使用到则打包到安装包中，未用到不会打入安装包中。
 
-##32 Handler
+#Handler
+
 [https://www.jianshu.com/p/b5b7d61c84ac](https://www.jianshu.com/p/b5b7d61c84ac "Handler常问问题")
 ![](../asset/handler.png)
 
@@ -1140,30 +1249,27 @@ res：会在 R 文件中生成 id 标记，资源在打包时如果使用到则�
 - Handler 通过 sendMessage() 发送 Message 到消息队列 MessageQueue。
 - Looper 通过 loop() 不断提取触发条件的Message，并将 Message 交给对应的 target handler（发送该消息的 Handler ）来处理。
 - target handler调用自身的 handleMessage() 方法来处理 Message。
-
-```java
-//基本使用
-var handler = Handler {}
-handler.sendMessage(msg)
-handler.post(runnable) 
-```
+- 
+    var handler = Handler {}
+    handler.sendMessage(msg)
+    handler.post(runnable) 
 
 ##### Handler 与 Looper 的关联
 
-```kotlin
-//Handler 基本使用
-class LooperThread : Thread() {
-    lateinit var mHandler: Handler
-    override fun run() {
-        Looper.prepare()//创建 Looper
-        mHandler = Handler {
-        }
-        Looper.loop()//不断尝试从 MessageQueue 中获取 Message , 并分发给对应的 Handler
-    }
-}
 
-//Handler 构造方法
-public Handler(Callback callback, boolean async) {
+    //Handler 基本使用
+    class LooperThread : Thread() {
+       lateinit var mHandler: Handler
+       override fun run() {
+           Looper.prepare()//创建 Looper
+           mHandler = Handler {
+           }
+           Looper.loop()//不断尝试从 MessageQueue 中获取 Message , 并分发给对应的 Handler
+        }
+    }
+
+    //Handler 构造方法
+    public Handler(Callback callback, boolean async) {
         ...
         mLooper = Looper.myLooper();
         //检查当前线程的 Looper 是否存在    
@@ -1174,9 +1280,9 @@ public Handler(Callback callback, boolean async) {
         }
         //Looper 持有一个 MessageQueue
         mQueue = mLooper.mQueue;
-        ...
- }
-```
+         ...
+     }
+
 
 Handler 跟线程的关联是靠 Looper 来实现的。
 
@@ -1188,7 +1294,7 @@ Handler post 等方法 最终都会调用 `MessageQueue.enqueueMessage(Message,l
 
 Message  存储和管理之后，就要进行分发与处理，调用 Looper.loop() 。
 
-```java
+
     public static void loop() {
         ...
         final Looper me = myLooper();
@@ -1218,11 +1324,11 @@ Message  存储和管理之后，就要进行分发与处理，调用 Looper.loo
             msg.recycleUnchecked();
         }
     }
-```
 
- queue.next()：获取消息
 
-```java
+    queue.next()：获取消息
+
+
     Message next() {
         ...
         for (;;) {
@@ -1267,12 +1373,12 @@ Message  存储和管理之后，就要进行分发与处理，调用 Looper.loo
         }
     }
 
-```
 
-msg.target 是发送该消息的 Handler，回调该 Handler :
 
-```java
-  public void dispatchMessage(Message msg) {
+    msg.target 是发送该消息的 Handler，回调该 Handler :
+
+
+    public void dispatchMessage(Message msg) {
         if (msg.callback != null) {//callback 优先级比较高
             handleCallback(msg);
         } else {
@@ -1284,7 +1390,7 @@ msg.target 是发送该消息的 Handler，回调该 Handler :
             handleMessage(msg);
         }
     }
-```
+
 
 #### 注意
 
@@ -1337,12 +1443,9 @@ Handler 允许我们发送延时消息，如果在延时期间用户关闭了 Ac
 涉及到 Linux pipe/epoll 机制，简单说就是在主线程的 MessageQueue 没有消息时，便阻塞在loop的 queue.next() 中的 nativePollOnce() 方法里，此时主线程会释放 CPU 资源进入休眠状态，直到下个消息到达或者有事务发生，通过往 pipe 管道写端写入数据来唤醒主线程工作。这里采用的 epoll 机制，是一种IO多路复用机制，可以同时监控多个描述符，当某个描述符就绪(读或写就绪)，则立刻通知相应程序进行读或写操作，本质是同步I/O，即读写是阻塞的。所以说，主线程大多数时候都是处于休眠状态，并不会消耗大量CPU资源。
 
 ##### handler postDelay这个延迟是怎么实现的？
-
-```java
-//加上当前时间
-SystemClock.uptimeMillis() + delayMillis
-msg.when = when;   
-```
+    //加上当前时间
+     SystemClock.uptimeMillis() + delayMillis
+     msg.when = when; 
 
 handler.postDelay 并不是先等待一定的时间再放入到MessageQueue中，而是直接进入MessageQueue，以 MessageQueue 的时间顺序排列和唤醒的方式结合实现的。
 
@@ -1357,16 +1460,16 @@ handler.postDelay 并不是先等待一定的时间再放入到MessageQueue中�
 
 ##### 子线程里弹 Toast 
 
-```java
-new Thread(new Runnable() {
-  @Override
-  public void run() {
-    Looper.prepare();
-    Toast.makeText(HandlerActivity.this, "test", Toast.LENGTH_SHORT).show();
-    Looper.loop();
-  }
-}).start();
-```
+    new Thread(new Runnable() {
+    @Override
+     public void run() {
+      Looper.prepare();
+      Toast.makeText(HandlerActivity.this, "test", Toast.LENGTH_SHORT).show();
+      Looper.loop();
+      }
+    }).start();
+
+
 ##pipe/epoll机制
 
 [Handler 都没搞懂，拿什么去跳槽啊？](https://juejin.im/post/5c74b64a6fb9a049be5e22fc#heading-7)
@@ -1385,11 +1488,11 @@ new Thread(new Runnable() {
 
 * SpareArray
 
-```java
-//避免了对key的自动装箱,两个数组来进行数据存储的，一个存储key，另外一个存储value,查找使用二分查找法
-private int[] mKeys;
-private Object[] mValues;
-```
+
+    //避免了对key的自动装箱,两个数组来进行数据存储的，一个存储key，另外一个存储value,查找使用二分查找法
+    private int[] mKeys;
+    private Object[] mValues;
+
 
 * ArrayMap：
 
@@ -1421,23 +1524,9 @@ private Object[] mValues;
   * 重复使用其他活动中的片段
   * 处理屏幕配置变化
 
-* 推荐：今日头条的适配方案：**动态更改 density**
+推荐：今日头条的适配方案：**动态更改 density**
 
-```java
-px:像素   px = dp * (dpi / 160) 
-dp:设备独立像素
-dpi:像素密度 dpi = 根号(宽^2 + 高^2) / 屏幕尺寸(inch)
-
-//基本公式
-px = dp * density;
-density = dpi / 160;
-px = dp * (dpi / 160);    
-```
-
-```java
-private static void adaptScreen(final Activity activity,
-                                    final int sizeInPx,
-                                    final boolean isVerticalSlide) {
+    private static void adaptScreen(final Activity activity, final int sizeInPx, final boolean isVerticalSlide) {
         final DisplayMetrics systemDm = Resources.getSystem().getDisplayMetrics();
         final DisplayMetrics appDm = App.getAppContext().getResources().getDisplayMetrics();
         final DisplayMetrics activityDm = activity.getResources().getDisplayMetrics();
@@ -1452,8 +1541,23 @@ private static void adaptScreen(final Activity activity,
         appDm.scaledDensity = activityDm.scaledDensity;
         appDm.densityDpi = activityDm.densityDpi;
     }
+
+    
+       
+     px:像素   px = dp * (dpi / 160) 
+        dp:设备独立像素
+       dpi:像素密度 dpi = 根号(宽^2 + 高^2) / 屏幕尺寸(inch)
+    
+       //基本公式
+       px = dp * density;
+       density = dpi / 160;
+       px = dp * (dpi / 160);    
+
+    
+
 //假如要使用第三方的UI界面的时候，重新设置为系统的density即可
-public static void cancelAdaptScreen(final Activity activity) {
+
+    public static void cancelAdaptScreen(final Activity activity) {
         final DisplayMetrics systemDm = Resources.getSystem().getDisplayMetrics();
         final DisplayMetrics appDm = App.getAppContext().getResources().getDisplayMetrics();
         final DisplayMetrics activityDm = activity.getResources().getDisplayMetrics();
@@ -1464,7 +1568,8 @@ public static void cancelAdaptScreen(final Activity activity) {
         appDm.scaledDensity = systemDm.scaledDensity;
         appDm.densityDpi = systemDm.densityDpi;
     }
-```
+  
+
 
 [Android 屏幕适配：最全面的解决方案](https://www.jianshu.com/p/ec5a1a30694b)
 
@@ -1474,15 +1579,15 @@ public static void cancelAdaptScreen(final Activity activity) {
 
 显式 Intent，明确指出目标组件的名称
 
-```java
- bt.setOnClickListener(new View.OnClickListener() {
+
+    bt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,secondActivity.class);
                 startActivity(intent);
             }
         });
-```
+
 
 隐式 Intent，没有明确指出目标组件名称，intent-filter
 
@@ -1523,18 +1628,17 @@ include：重用布局文件
 
 内容提供器，调用 Context 的 **getContentResolver** 方法。
 
-```java
-Uri uri = Uri.parse("content:xxx/xxx");
-Cursor cursor = getContentResolver().query(uri,new String[]{"author","price"},
+    Uri uri = Uri.parse("content:xxx/xxx");
+    Cursor cursor = getContentResolver().query(uri,new String[]{"author","price"},
         "name=?",new String[]{"Java"},null);
-if(cursor.moveToFirst()){
+    if(cursor.moveToFirst()){
     do{
         Log.d("MainActivity",cursor.getString(cursor.getColumnIndex("name")));
         Log.d("MainActivity",cursor.getString(cursor.getColumnIndex("price")));
     }while(cursor.moveToNext());
-}
-cursor.close()
-```
+    }
+    cursor.close()
+
 
 ### 41 Android 怎么加速启动 Activity？
 
@@ -1608,8 +1712,7 @@ public class LazyLoadFragment extends Fragment {
 
 ViewPager+Fragment: 在 FragmentPagerAdapter 与 FragmentStatePagerAdapter 新增了含有 **behavior** 字段的构造函数。
 
-```java
-public class LazyLoadFragment extends Fragment {
+    public class LazyLoadFragment extends Fragment {
     //判断是否已进行过加载，避免重复加载
     private boolean isLoad=false;
 
@@ -1632,7 +1735,9 @@ public class LazyLoadFragment extends Fragment {
             //懒加载。。。
     }
 }
-```
+
+
+
 
 [Android Fragment 懒加载](https://www.cnblogs.com/Robin132929/p/13819386.html)
 
@@ -1716,16 +1821,16 @@ save 和 restore 要配对使用，**restore 次数 <= save 少**
 
 我们使用友盟多渠道打包。
 
-```java
-android {  
+
+    android {  
     productFlavors {
         xiaomi {}
         baidu {}
         wandoujia {}
         _360 {}        // 或“"360"{}”，数字需下划线开头或加上双引号
     }
-}
-```
+    }
+
 
 或者使用 360 加固，配置多渠道打包。
 
@@ -1784,12 +1889,12 @@ service 里面不能执行耗时的操作(网络请求,拷贝数据库,大文件
 
 使用 **onSaveInstanceState()**
 
- ```kotlin
-override fun onSaveInstanceState(outState: Bundle) {
+
+    override fun onSaveInstanceState(outState: Bundle) {
      //保存状态
      super.onSaveInstanceState(outState)
-}
- ```
+    }
+
 
 ### 61 Context、 Activity、Application 有什么区别？
 
@@ -1964,14 +2069,14 @@ Android中的 Scheme 是一种**页面跳转协议**，和网站通过URL的形�
 
 可以，viewRootImp 的创建是在 Activity中 onResume 方法中创建的，我们可以单独开启了线程在 onCreate 里，它逃过了viewRootImp的创建，所以不会抛异常，但是线程一旦阻塞两秒了，viewRootImp 已经创建好了，所以能检查到。
 
-```java
-void checkThread() {
+
+    void checkThread() {
     if (mThread != Thread.currentThread()) {
-        throw new CalledFromWrongThreadException(
-                "Only the original thread that created a view hierarchy can touch its views.");
+    throw new CalledFromWrongThreadException(
+    "Only the original thread that created a view hierarchy can touch its views.");
     }
-}
-```
+    }
+
 
 ### 89  怎么控制另外一个进程的View显示？
 
@@ -1991,24 +2096,24 @@ RemoteViews
 
 ### 92 Scroller 原理？
 
-```java
-//1.创建一个Scroller对象，一般在View的构造器中创建
- mScroller = new Scroller(context);
 
-//2.重写 View 的 computeScroll()
-@Override
-public void computeScroll() {
-  super.computeScroll();
-  if (mScroller.computeScrollOffset()) {
+    //1.创建一个Scroller对象，一般在View的构造器中创建
+     mScroller = new Scroller(context);
+    
+    //2.重写 View 的 computeScroll()
+    @Override
+    public void computeScroll() {
+      super.computeScroll();
+      if (mScroller.computeScrollOffset()) {
     scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
     postInvalidate();
-  }
-}
+      }
+    }
+    
+    //3.调用startScroll()方法，startX和startY为开始滚动的坐标点，dx和dy为对应的偏移量
+    mScroller.startScroll (int startX, int startY, int dx, int dy);
+    invalidate();
 
-//3.调用startScroll()方法，startX和startY为开始滚动的坐标点，dx和dy为对应的偏移量
-mScroller.startScroll (int startX, int startY, int dx, int dy);
-invalidate();
-```
 
 * 在 mScroller.startScroll() 中为滑动做初始化准备，比如：起始坐标，滑动的距离和方向以及持续时间(有默认值)，动画开始时间等。
 
@@ -2062,24 +2167,24 @@ RecyclerView25.1.0及以上版本增加了Prefetch功能。
 
 用空间换时间，来提高滚动的流畅性。
 
-```java
-recyclerView.setItemViewCacheSize(20);
-recyclerView.setDrawingCacheEnabled(true);
-recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-```
+
+    recyclerView.setItemViewCacheSize(20);
+    recyclerView.setDrawingCacheEnabled(true);
+    recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
 
 **10、增加RecyclerView预留的额外空间**
 
 额外空间：显示范围之外，应该额外缓存的空间
 
-```java
-new LinearLayoutManager(this{
-@Override
-protected int getExtraLayoutSpace(RecyclerView.Statestate){
+
+    new LinearLayoutManager(this{
+    @Override
+    protected int getExtraLayoutSpace(RecyclerView.Statestate){
     return size;
-  }
-};
-```
+      }
+    };
+    
 
 **11、减少ItemView监听器的创建**
 
@@ -2156,23 +2261,23 @@ Message 分为3种：
 
 ViewRootImpl.scheduleTraversals 方法就使用了同步屏障，保证UI绘制优先执行。
 
-```java
-void scheduleTraversals() {
+
+    void scheduleTraversals() {
     if (!mTraversalScheduled) {
-        mTraversalScheduled = true;
-        //设置同步障碍，确保mTraversalRunnable优先被执行
-        mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
-        //内部通过Handler发送了一个异步消息
-        mChoreographer.postCallback(
-                Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
-        if (!mUnbufferedInputDispatch) {
-            scheduleConsumeBatchedInput();
-        }
-        notifyRendererOfFramePending();
-        pokeDrawLockIfNeeded();
+    mTraversalScheduled = true;
+    //设置同步障碍，确保mTraversalRunnable优先被执行
+    mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
+    //内部通过Handler发送了一个异步消息
+    mChoreographer.postCallback(
+    Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+    if (!mUnbufferedInputDispatch) {
+    scheduleConsumeBatchedInput();
     }
-}
-```
+    notifyRendererOfFramePending();
+    pokeDrawLockIfNeeded();
+    }
+    }
+
 
 
 
@@ -2246,16 +2351,15 @@ Android 应用 (APK) 文件包含 [Dalvik](https://source.android.google.cn/devi
 
 * 视图重叠：重复加载了同一个 Fragment 导致重叠
 
-  ```java
-  @Override 
-  protected void onCreate(@Nullable Bundle savedInstanceState) {
-  // 在页面重启时，Fragment会被保存恢复，而此时再加载Fragment会重复加载，导致重叠 ;
-      if(saveInstanceState == null){
-      // 或者 if(findFragmentByTag(mFragmentTag) == null)
-         // 正常情况下去 加载根Fragment 
-      } 
-  }
-  ```
+     @Override 
+     protected void onCreate(@Nullable Bundle savedInstanceState) {
+     // 在页面重启时，Fragment会被保存恢复，而此时再加载Fragment会重复加载，导致重叠 ;
+        if(saveInstanceState == null){
+         // 或者 if(findFragmentByTag(mFragmentTag) == null)
+           // 正常情况下去 加载根Fragment 
+        } 
+     }
+
 
   ### 108 View 绘制
 
@@ -2440,19 +2544,19 @@ Fragment 可见状态改变时会被调用setUserVisibleHint()方法，可以通
 
 ### 120 自定义 view(自定义view的时候，三个构造函数各自的作用)
 
-```java
-//在java代码创建视图的时候被调用，如果是从xml填充的视图，就不会调用这个
-public RoundProgressBar(Context context) {
-        this(context, null);    
-    }
- 
-//在xml创建但是没有指定style的时候被调用
-public RoundProgressBar(Context context, AttributeSet attrs) {
-       this(context, attrs, 0);　　
-}
 
-public RoundProgressBar(Context context, AttributeSet attrs, int defStyle) {}
-```
+    //在java代码创建视图的时候被调用，如果是从xml填充的视图，就不会调用这个
+    public RoundProgressBar(Context context) {
+            this(context, null);    
+       }
+ 
+    //在xml创建但是没有指定style的时候被调用
+    public RoundProgressBar(Context context, AttributeSet attrs) {
+           this(context, attrs, 0);　　
+    }
+
+     public RoundProgressBar(Context context, AttributeSet attrs, int defStyle) {}
+
 
 
 
@@ -2475,34 +2579,35 @@ SparseArray
 
 **密码明文存储漏洞**
 
-```java
-WebSettings.setSavePassword(false)  //关闭密码保存提醒
-```
+
+
+    WebSettings.setSavePassword(false)  //关闭密码保存提醒
+
 
 **域控制不严格漏洞**
 
 当其他应用启动此 Activity 时， intent 中的 data 直接被当作 url 来加载（假定传进来的 url 为 file:///data/local/tmp/attack.html ），其他 APP 通过使用显式 ComponentName 或者其他类似方式就可以很轻松的启动该 WebViewActivity 并加载恶意url。
 
-```java
-//对于不需要使用 file 协议的应用，禁用 file 协议；
-// 禁用 file 协议；
-setAllowFileAccess(false); 
-setAllowFileAccessFromFileURLs(false);
-setAllowUniversalAccessFromFileURLs(false);
 
-//对于需要使用 file 协议的应用，禁止 file 协议加载 JavaScript。
-//需要使用 file 协议
-setAllowFileAccess(true); 
-setAllowFileAccessFromFileURLs(false);
-setAllowUniversalAccessFromFileURLs(false);
+    //对于不需要使用 file 协议的应用，禁用 file 协议；
+    // 禁用 file 协议；
+    setAllowFileAccess(false); 
+    setAllowFileAccessFromFileURLs(false);
+    setAllowUniversalAccessFromFileURLs(false);
+    
+    //对于需要使用 file 协议的应用，禁止 file 协议加载 JavaScript。
+    //需要使用 file 协议
+    setAllowFileAccess(true); 
+    setAllowFileAccessFromFileURLs(false);
+    setAllowUniversalAccessFromFileURLs(false);
 
-// 禁止 file 协议加载 JavaScript
-if (url.startsWith("file://") {
-    setJavaScriptEnabled(false);
-} else {
-    setJavaScriptEnabled(true);
-}
-```
+    // 禁止 file 协议加载 JavaScript
+    if (url.startsWith("file://") {
+        setJavaScriptEnabled(false);
+    } else {
+       setJavaScriptEnabled(true);
+    }
+
 
 ### 123 Binder 同步与异步
 
