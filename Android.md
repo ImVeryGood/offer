@@ -1,4 +1,4 @@
-# 一：Java基础 #
+﻿# 一：Java基础
 ##线程池
 [https://www.jianshu.com/p/7726c70cdc40](https://www.jianshu.com/p/7726c70cdc40 "线程池详解")
 ###什么是线程池
@@ -9,8 +9,8 @@
 - 线程池管理器（ThreadPool）：用于创建并管理线程池，包括 创建线程池，销毁线程池，添加新任务；
 - 工作线程（PoolWorker）：线程池中线程，在没有任务时处于等待状态，可以循环的执行任务；
 -  任务接口（Task）：每个任务必须实现的接口，以供工作线程调度任务的执行，它主要规定了任务的入口，任务执行完后的收尾工作，任务的执行状态等；
--  任务队列（taskQueue）：用于存放没有处理的任务。提供一种缓冲机制。                                                            
-###线程池的优势
+   -  任务队列（taskQueue）：用于存放没有处理的任务。提供一种缓冲机制。                                                            
+   ###线程池的优势
 
 - 降低系统资源消耗，通过重用已存在的线程，降低线程创建和销毁造成的消耗；
 - 提高系统响应速度，当有任务到达时，通过复用已存在的线程，无需等待新线程的创建便能立即执行；
@@ -47,7 +47,8 @@
 **面试：**
 
 下面这段代码的输出结果是什么？
-    `public class Main {
+
+    public class Main {
     public static void main(String[] args) {
          
         Integer i1 = 100;
@@ -58,7 +59,7 @@
         System.out.println(i1==i2);输出true
         System.out.println(i3==i4); 输出false
     }
-    }`
+    }
 
 为什么会出现这样的结果？输出结果表明i1和i2指向的是同一个对象，而i3和i4指向的是不同的对象。此时只需一看源码便知究竟，下面这段代码是Integer的valueOf方法的具体实现：
 
@@ -330,6 +331,7 @@ unlock()方法：释放锁
 
 ####ReadWriteLock
 ReadWriteLock也是一个接口，在它里面只定义了两个方法：
+
     public interface ReadWriteLock {
     /**
      * Returns the lock used for reading.
@@ -357,6 +359,7 @@ ReadWriteLock也是一个接口，在它里面只定义了两个方法：
 如果有一个线程已经占用了写锁，则此时其他线程如果申请写锁或者读锁，则申请的线程会一直等待释放写锁。
 ####可重入锁
 如果锁具备可重入性，则称作为可重入锁。像synchronized和ReentrantLock都是可重入锁，可重入性在我看来实际上表明了锁的分配机制：基于线程的分配，而不是基于方法调用的分配。举个简单的例子，当一个线程执行到某个synchronized方法时，比如说method1，而在method1中会调用另外一个synchronized方法method2，此时线程不必重新去申请锁，而是可以直接执行方法method2。
+
     class MyClass {
     public synchronized void method1() {
         method2();
@@ -1104,9 +1107,9 @@ Serializable 是序列化的意思，表示将一个对象转换成存储或可�
 
 JSON 的全称是 JavaScript Object Notation，也就是 JavaScript 对象表示法 JSON是存储和交换文本信息的语法，类似XML，但是比XML更小、更快，更易解析 JSON是轻量级的文本数据交换格式，独立于语言，具有可描述性，更易理解，对象可以包含多个名称/值对，比如：
 
-```java
-{"name":"test" , "age":25}
-```
+
+`{"name":"test" , "age":25}`
+
 
 ### 18 Android 为每个应用程序分配的内存大小是多少？
 
@@ -1118,18 +1121,14 @@ JSON 的全称是 JavaScript Object Notation，也就是 JavaScript 对象表示
 
 *  Context 中启动 Activity 须给 intent 设置Flag:
 
-```java
-intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-```
+`intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);`
 
 ### 20 怎么在Service中创建Dialog对话框？
 
-```java
-//设置类型
+`//设置类型
 dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT)
 //权限
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINOW" />
-```
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINOW" />`
 
 ### 21 程序A能否接收到程序B的广播？
 
@@ -1181,8 +1180,8 @@ DOM：即对象文档模型，它是将整个XML文档载入内存(所以效率�
 
 ### 27 程序自启动？
 
-```java
-//AndroidManifest.xml
+
+`//AndroidManifest.xml
 android:installLocation="internalOnly":表示程序只能被安装在内存中，如果内存为空，则程序将不能成功安装，因为安装在 SD 卡中时会接收不到系统的广播消息(暂时未验证)
     
 //添加权限
@@ -1198,8 +1197,8 @@ android:installLocation="internalOnly":表示程序只能被安装在内存中�
         <category android:name="android.intent.category.HOME" />
     </intent-filter>
 </receiver>  
-//高版本基本没用，每个手机厂商都有一个手机管家，可以在里面设置自启动管理           
-```
+//高版本基本没用，每个手机厂商都有一个手机管家，可以在里面设置自启动管理      `     
+
 
 ### 28 BroadcastReceiver，LocalBroadcastReceiver 区别？
 
@@ -1216,15 +1215,14 @@ android:installLocation="internalOnly":表示程序只能被安装在内存中�
 
 ### 30 计算一个view的嵌套层级
 
-```java
-private int getParents(View view){
+
+`private int getParents(View view){
     if(view.getParents() == null) 
         return 0;
     } else {
       return (1 + getParents(view.getParents));
    }
-}
-```
+}`
 
 ### 31 asset 目录与 res 目录的区别？
 
@@ -1593,7 +1591,7 @@ handler.postDelay 并不是先等待一定的时间再放入到MessageQueue中�
 
 * 动作(Action)
 
-* 类别(Category ['kætɪg(ə)rɪ] )
+* 类别`(Category ['kætɪg(ə)rɪ] )`
 
 * 数据(Data )
 
@@ -1654,8 +1652,8 @@ include：重用布局文件
 
 * support 版本中利用 setUserVisibleHint 和  onHiddenChanged
 
-```java
-public class LazyLoadFragment extends Fragment {
+
+`public class LazyLoadFragment extends Fragment {
     //判断是否已进行过加载，避免重复加载
     private boolean isLoad=false;
     //判断当前fragment是否可见
@@ -1703,8 +1701,7 @@ public class LazyLoadFragment extends Fragment {
             //懒加载。。。
             isLoad=true;
         }
-    }
-```
+    }`
 
 * Androidx 版本。
 
@@ -1778,9 +1775,9 @@ bitmap.recycle()方法用于回收该Bitmap所占用的内存，接着将bitmap�
 
 ### 47 一张Bitmap所占内存以及内存占用的计算
 
-```java
-Bitamp 所占内存大小 = 宽度像素 *（inTargetDensity / inDensity）* 高度像素 *（inTargetDensity / inDensity）* 一个像素所占的内存字节大小 
-```
+
+`Bitamp 所占内存大小 = 宽度像素 *（inTargetDensity / inDensity）* 高度像素 *（inTargetDensity / inDensity）* 一个像素所占的内存字节大小 `
+
 
 注：这里 inDensity 表示目标图片的dpi（放在哪个资源文件夹下），inTargetDensity表示目标屏幕的dpi，所以你可以发现inDensity和inTargetDensity会对Bitmap的宽高进行拉伸，进而改变Bitmap占用内存的大小。
 
@@ -1979,9 +1976,9 @@ Activity 和 Service 都是 Android 四大组件之一。都是 Context 类的�
 
 ### 75 将一个Activity设置成窗口的样式？
 
-```xml
-android:theme="@android:style/Theme.Dialog"
-```
+
+`android:theme="@android:style/Theme.Dialog"`
+
 
 ### 76 HandlerThread
 
@@ -2480,9 +2477,9 @@ SharePreferences 在创建的时候会把整个文件全部加载进内存，如
 
 内存缓存基于 LruCache 实现，磁盘缓存基于 DiskLruCache 实现。这两个类都基于Lru算法和LinkedHashMap 来实现。
 
-```java
+
 LRU 是Least Recently Used的缩写，最近最久未使用算法，它的核心原则是如果一个数据在最近一段时间没有使用到，那么它在将来被访问到的可能性也很小，则这类数据项会被优先淘汰掉。
-```
+
 
 为什么会选择LinkedHashMap 呢？
 
@@ -2763,6 +2760,9 @@ RecyclerViewPool底层是使用了SparseArray来分开存储不同ViewType的Vie
 1. context。主要是内存泄露的考察以及application和activity两种context如何选择。
 ## 事件分发
 [https://blog.csdn.net/guolin_blog/article/details/9097463](https://blog.csdn.net/guolin_blog/article/details/9097463 "事件分发")
+1. dispatchTouchEvent ：处在链首，用于分发事件，该方法决定是由当前View自己的onTouchEvent来处理，还是分发给子View，让子View递归调用其自身的dispatchTouchEvent来处理。
+1. onInterceptTouchEvent ：是用来拦截事件的，当父控件下发事件给子控件进行拦截处理的时候，如果子控件需要对事件进行处理，就要在onInterceptTouchEvent方法中进行拦截，然后到子控件的onTouchEvent方法中进行事件的监听以及逻辑的判断。
+1. onTouchEvent ：用于处理传递到View的手势事件。
 
 当我们点击屏幕的时候，就会产生Event事件，此时会首先调用Activity的dispatchTouchEvent方法，源码如下：
 
@@ -2864,6 +2864,27 @@ Activty事件分发很简单，如果重写了dispatchTouchEvent方法，无论�
 
         return result;
     }
+    
+如果`dispatchTouchEvent`返回true，说明以下代码执行
+
+     if (onFilterTouchEventForSecurity(event)) {
+            if ((mViewFlags & ENABLED_MASK) == ENABLED && handleScrollBarDragging(event)) {
+                result = true;
+            }
+            //noinspection SimplifiableIfStatement
+            ListenerInfo li = mListenerInfo;
+            if (li != null && li.mOnTouchListener != null
+                    && (mViewFlags & ENABLED_MASK) == ENABLED
+                    && li.mOnTouchListener.onTouch(this, event)) {
+                result = true;
+            }
+
+            if (!result && onTouchEvent(event)) {
+                result = true;
+            }
+        }
+此时`onTouch`返回值为true，说明走了onTouchEvent方法
+
 
 当触摸事件发生时，首先 Activity 将 TouchEvent 传递给最顶层的 View，TouchEvent最先到达最顶层 view 的 dispatchTouchEvent ，然后由 dispatchTouchEvent 方法进行分发，
 
@@ -2912,6 +2933,7 @@ Activty事件分发很简单，如果重写了dispatchTouchEvent方法，无论�
 ####内部解决法
 从子View着手，父View先不要拦截任何事件，所有的事件传递给 子View，如果子View需要此事件就消费掉，不需要此事件的话就交给 父View处理。
 实现思路 如下，重写子 View的dispatchTouchEvent方法，在Action_down 动作中通过方法 requestDisallowInterceptTouchEvent（true） 先请求 父 View不要拦截事件，这样保证子 View 能够接受到 Action_move 事件，再在 Action_move 动作中根据自己的逻辑是否要拦截事件，不需要拦截事件的话再交给 父 View 处理。
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
     int x = (int) ev.getRawX();
